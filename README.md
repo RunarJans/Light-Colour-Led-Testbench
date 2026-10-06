@@ -1,233 +1,104 @@
 # Light-Colour-Led-Testbench
 
-Automated testbench to measure and visualize light intensity and RGB colour of LEDs, screens and other light sources.  
-Special focus on testing a Philips Hue lamp and a Philips Hue motion sensor, with results shown on a small display with graphs.
+Geautomatiseerde ESP32‑testbank om lichtsterkte, RGB‑kleur en de werking van een Philips Hue‑bewegingssensor te testen.  
+Resultaten worden live weergegeven op een ingebouwd schermpje met grafieken en simpele scores.
 
-## Goal
+## Doel
 
-Build a compact, ESP32‑based testbench that can:
+- **Lamp‑test:**  
+  Een Hue‑lamp (of andere lichtbron) wordt door verschillende kleuren en wit‑/warmlicht gestuurd.  
+  Een kleursensor meet helderheid per kleur en kleuraccuraatheid. Resultaten worden in grafieken getoond.
 
-- Measure light intensity and colour (R/G/B) of various light sources using a colour sensor.
-- Automatically control a Philips Hue lamp via the Hue Bridge API.
-- Test and visualize the behaviour of a Philips Hue motion sensor.
-- Show live data and graphs on a small local display.
+- **Bewegingstest:**  
+  Een mechanisch element beweegt 10× voor een Philips Hue‑bewegingssensor.  
+  De ESP32 controleert via de Hue Bridge of de sensor elke beweging detecteert en toont een score **X/10**.
 
-All controlled by an ESP32 running MicroPython.
-
-## Features (planned)
-
-### 1. Motion Sensor Test Mode
-
-Test the Philips Hue motion sensor independently.
-
-- Read from Hue Bridge API:
-  - `state.presence` (motion detected yes/no)
-  - `state.lightlevel` (sensor light level)
-- Optionally read local light sensor (TCS34725) for comparison.
-- Display on screen:
-  - Current presence status
-  - Current light level
-  - Time‑based graph (last 30–60 s) of presence and/or light level
-- Buttons:
-  - Start/Stop measurement (reset buffer)
-  - Back to dashboard
-
-Optional automation:
-- Small servo or motor to move an object in front of the sensor for repeatable motion patterns.
+Alles wordt aangestuurd door een ESP32 met MicroPython.
 
 ---
 
-### 2. Light / Colour Test Mode
+## Gebruik
 
-Test lamps and other light sources (e.g. Philips Hue lamp).
+### Lamp‑test
 
-- Control Hue lamp via Hue Bridge API:
-  - On/off
-  - Brightness
-  - Colour (xy or hue/sat)
-- Measure with local colour sensor (TCS34725):
-  - R, G, B, clear (intensity)
-- Display on screen:
-  - Current lamp settings (colour + brightness)
-  - Measured R/G/B/clear values (numeric)
-  - Graph over time / test steps:
-    - Intensity (clear channel)
-    - Or separate R, G, B lines
-- Buttons:
-  - Run full test (predefined sequence of colours/brightness levels)
-  - Single step (test one specific setting)
+1. Draai de lamp in de houder van de testbank.
+2. Sluit de behuizing (donkere meetkamer).
+3. Druk op **“Start lamp‑test”**.
 
----
+De testbank:
 
-### 3. Dashboard Mode
-
-Overview screen with key metrics and mini‑graphs.
-
-- Show latest values:
-  - Motion sensor: presence, lightlevel
-  - Light sensor: R, G, B, clear
-- Mini graphs:
-  - Presence over time (last ~30 s)
-  - R/G/B or intensity over time (last ~30 s)
-- System status:
-  - Wi‑Fi connected (yes/no)
-  - Hue Bridge reachable (yes/no)
-- Buttons:
-  - Navigate to Motion Sensor Test
-  - Navigate to Light / Colour Test
+- Stuurt de lamp automatisch door een vaste reeks:
+  - Rood, groen, blauw, cyaan, magenta, geel
+  - Warm wit, neutraal wit, koud wit
+  - Uit
+- Meet bij elke stap met een TCS34725‑kleursensor:
+  - R, G, B, clear (helderheid)
+- Toont op het scherm:
+  - Grafieken van helderheid per kleur (R/G/B over de teststappen)
+  - Kleuraccuraatheid (vergelijking verwachte vs. gemeten R/G/B‑verhouding)
+  - Optioneel een samenvattende score (bijv. “Kleuraccuraatheid: 87 %”)
 
 ---
 
-## Hardware (planned)
+### Bewegingstest
 
-- **Microcontroller**
-  - ESP32 (e.g. DOIT ESP32 DevKit v1 or similar)
+1. Monteer de Philips Hue‑bewegingssensor op de voorziene plek.
+2. Zorg dat het bewegingselement (bijv. servo met vlagje) vrij kan bewegen.
+3. Druk op **“Start bewegingstest”**.
 
-- **Light / colour sensor**
-  - TCS34725 (I²C)  
-    - Measures R, G, B, clear (intensity)
+De testbank:
 
-- **Display**
-  - Option A: 1.3"–1.8" TFT (ST7735 / ILI9341, SPI)  
-  - Option B: 0.96" OLED (SSD1306, I²C)  
-  - Used for menus, numeric values and simple line graphs.
-
-- **Buttons**
-  - 2–3 push buttons:
-    - MODE: switch between Dashboard / Motion Test / Light Test
-    - START/STOP: start or reset a measurement
-    - BACK / STEP: context‑dependent navigation
-
-- **Philips Hue ecosystem**
-  - Philips Hue Bridge (v2/v3)
-  - Philips Hue lamp (device under test)
-  - Philips Hue motion sensor (device under test)
-
-- **Optional**
-  - Servo (SG90) or small motor + driver to simulate motion in front of the Hue motion sensor.
-  - Additional lux sensor (e.g. BH1750) for independent lux reference.
+- Beweegt 10× een object voor de sensor (vast patroon).
+- Vraagt na elke beweging via de Hue Bridge API:
+  - `state.presence` (gedetecteerd ja/nee)
+  - Optioneel `state.lightlevel`
+- Telt hoeveel keer de sensor correct reageerde.
+- Toont op het scherm:
+  - Tijdens de test: “Getest: 3/10”, “Gedetecteerd: 2/10”
+  - Na afloop: **“Score: 8/10”** (en eventueel een korte kwalificatie)
 
 ---
 
-## Software architecture (planned)
+## Hardware (kern)
 
-Firmware on ESP32 in MicroPython.
-
-### Main structure
-
-- `main.py`
-  - Initialize hardware:
-    - I²C (TCS34725, optional OLED)
-    - SPI (if using TFT)
-    - Buttons
-    - Wi‑Fi
-  - Main loop:
-    - Read buttons
-    - Update current mode:
-      - 0: Dashboard
-      - 1: Motion Sensor Test
-      - 2: Light / Colour Test
-    - Call corresponding screen/logic function
-
-- `motion_test.py`
-  - `fetch_motion_sensor_state()` – read from Hue API
-  - `run_motion_test(display, buffer)` – main test loop
-  - Maintain ring buffer for last N samples (presence, lightlevel)
-  - Draw:
-    - Current status text
-    - Line graph of presence/lightlevel over time
-
-- `light_test.py`
-  - `set_lamp_colour(bri, xy/hue_sat)` – send command to Hue lamp
-  - `read_light_sensor()` – read R/G/B/clear from TCS34725
-  - `run_light_test(display, buffer)` – step through colours/brightness
-  - Draw:
-    - Current lamp settings
-    - Measured R/G/B/clear values
-    - Graph of intensity or R/G/B over time/steps
-
-- `dashboard.py`
-  - `show_dashboard(display, motion_buffer, light_buffer)`
-  - Show:
-    - Latest motion sensor values
-    - Latest light sensor values
-    - Mini graphs
-    - Wi‑Fi & Bridge status
-
-- `hue_api.py`
-  - HTTP wrappers for Hue Bridge:
-    - `get_sensor_state(sensor_id)`
-    - `set_light_state(light_id, **kwargs)`
-  - Handle:
-    - Wi‑Fi connection
-    - API username/token
-    - Error handling (Bridge unreachable, etc.)
-
-### Display & graphs
-
-- Use a MicroPython display library depending on screen:
-  - ST7735 / ILI9341 for TFT
-  - SSD1306 for OLED
-- Custom simple graph function:
-  - X‑axis: time or step index
-  - Y‑axis: mapped sensor value to pixel height
-  - Multiple lines for R, G, B if needed
+- ESP32 (MicroPython)
+- TCS34725 kleursensor (I²C)
+- Klein display (TFT of OLED)
+- 2–3 drukknoppen:
+  - “Start lamp‑test”
+  - “Start bewegingstest”
+  - Optioneel: “Mode / Dashboard”
+- Philips Hue Bridge + Hue lamp + Hue bewegingssensor
+- Optioneel: servo/motor voor bewegingstest
 
 ---
 
-## User workflow
+## Software (op ESP32)
 
-1. Power on the ESP32 testbench.
-2. Use **MODE** button to switch between:
-   - Dashboard
-   - Motion Sensor Test
-   - Light / Colour Test
-3. In **Motion Sensor Test**:
-   - Press **START** to begin logging.
-   - Move in front of the Hue motion sensor (or let servo move).
-   - Watch live presence status and graph on the display.
-4. In **Light / Colour Test**:
-   - Press **RUN TEST** to execute a predefined sequence of lamp colours/brightness.
-   - Or use **STEP** to test a single setting.
-   - Watch measured R/G/B/clear values and graphs.
-5. Use **Dashboard** for a quick overview of both sensors and system status.
+- `main.py` – hoofdloop, knoppen, modus‑keuze
+- `light_test.py` – lamp‑testreeks, sensor uitlezen, grafieken
+- `motion_test.py` – 10× beweging, Hue API uitlezen, X/10 score
+- `dashboard.py` – overzichtsscherm met laatste resultaten
+- `hue_api.py` – HTTP‑communicatie met Hue Bridge
+- `sensors/tcs34725.py` – driver voor de kleursensor
 
 ---
 
-## Future extensions (optional)
+## Resultaten
 
-- Log all measurements to SD card or send to a PC/server for deeper analysis.
-- Web interface on ESP32 or external dashboard (e.g. on Raspberry Pi).
-- More advanced colour metrics (derived from R/G/B, e.g. approximate colour temperature).
-- Automated motion patterns with servo control and configurable profiles.
-- Support for additional light sources (other smart bulbs, screens, etc.).
+- **Lamp‑test:**
+  - Grafieken van helderheid per kleur (R/G/B)
+  - Kleuraccuraatheid (verwachting vs. meting)
+  - Optioneel samenvattende scores
 
----
-
-## Repo structure (planned)
-
-```text
-Light-Colour-Led-Testbench/
-├─ README.md
-├─ docs/
-│  └─ hardware_plan.md
-├─ firmware/
-│  ├─ main.py
-│  ├─ motion_test.py
-│  ├─ light_test.py
-│  ├─ dashboard.py
-│  ├─ hue_api.py
-│  └─ sensors/
-│     └─ tcs34725.py
-└─ hardware/
-   ├─ wiring_diagram.png
-   └─ bom.md
-```
+- **Bewegingstest:**
+  - Eenvoudige, duidelijke score **X/10**
+  - Optioneel kwalificatie (zeer goed / goed / matig / slecht)
 
 ---
 
-## Notes
+## Opmerkingen
 
-- All communication with the Philips Hue lamp and motion sensor goes through the Hue Bridge API (HTTP over Wi‑Fi).
-- The local colour sensor (TCS34725) is used for independent measurement of light intensity and RGB content.
-- The project is designed to be modular: additional sensors, displays or test modes can be added later without restructuring everything.
+- Alle communicatie met lamp en bewegingssensor verloopt via de Hue Bridge API (HTTP over Wi‑Fi).
+- De testbank evalueert het systeemgedrag: “Bij beweging detecteert de sensor dit wel/niet betrouwbaar?”
+- Het project is modulair: extra sensoren, tests of een webinterface kunnen later eenvoudig worden toegevoegd.

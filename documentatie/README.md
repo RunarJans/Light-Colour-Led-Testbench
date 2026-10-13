@@ -15,5 +15,6 @@
 | Philips Hue-kleurlamp, E27 | 1 | Te testen lamp | Kleur en helderheid instelbaar |
 | Zwart karton, vilt of verf | 1 | Eenvoudige donkere meetopstelling | Vermindert omgevingslicht en reflecties |
 | Dubbelzijdige tape of hot glue | 1 | Sensoren en display bevestigen | Tijdelijke of vaste montage |
+| DC Motor | 1 | Bewegingstest |  |
 | Optioneel: condensator 100 nF | 3 | Ontkoppeling voedingsrail | Dicht bij modules plaatsen |
 | Optioneel: condensator 470 uF, 10 V | 1 | Buffer bij Wi-Fi-pieken | Voorkomt mogelijke brownout-resets |

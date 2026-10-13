@@ -19,10 +19,10 @@ Iedereen kan op die publieke broker meelezen, dus stuur er geen gevoelige data o
 | Wat | Waar | Thuis (test) | Bij Brightsense |
 |---|---|---|---|
 | `PROFIEL` | bovenaan | `"thuis"` | `"brightlinq"` |
-| Wifi-wachtwoord | profiel `thuis`, `"password"` | wachtwoord van `jippie` invullen | niet nodig (`brightlinq`) |
+| Wifi-wachtwoord | profiel `thuis`, `"password"` | wachtwoord van je eigen wifi invullen | niet nodig (`brightlinq`) |
 | Broker | profiel `brightlinq`, `"server"` | niet nodig | IP-adres van `brightlinq.local` invullen |
 | `DEVICE_TYPE` | onder de profielen | `"TEST_ESP32_LUX"` | eventueel `Configuration.BOARD_SENSE_LUX_RGB_1` |
-| `prefix` | profiel `thuis` | `"runar-wellen/"` (mag je veranderen) | blijft `""` (leeg) |
+| `prefix` | profiel `thuis` | `"mijn-test/"` (mag je veranderen) | blijft `""` (leeg) |
 
 ### In `laptop_server.py` (laptop)
 | Wat | Waar | Waarde |
@@ -30,7 +30,7 @@ Iedereen kan op die publieke broker meelezen, dus stuur er geen gevoelige data o
 | `PREFIX` | bovenaan | moet **exact gelijk** zijn aan `prefix` van profiel `thuis` in `test_device.py` |
 | `BROKER` | bovenaan | `broker.hivemq.com` (niet wijzigen) |
 
-Wil je een uniek prefix (omdat de broker publiek is)? Verander `runar-wellen/` op beide plaatsen naar bijvoorbeeld `runar-wellen-4821/`.
+Wil je een uniek prefix (omdat de broker publiek is)? Verander `mijn-test/` op beide plaatsen naar bijvoorbeeld `mijn-test-4821/`.
 
 De laptop heeft geen wifi-instellingen nodig. Hij gebruikt je gewone internetverbinding.
 
@@ -42,7 +42,7 @@ De laptop heeft geen wifi-instellingen nodig. Hij gebruikt je gewone internetver
 1. Sluit de ESP32 aan via USB.
 2. Thonny: **Run -> Configure interpreter -> MicroPython (ESP32)** en kies je poort (bv. COM7).
 3. Open **View -> Files**.
-4. Upload via rechtermuisknop -> **Upload to /** deze vier dingen vanuit `C:\Users\runar\PE\python-brightsense-develop`:
+4. Upload via rechtermuisknop -> **Upload to /** deze vier dingen vanuit `C:\pad\naar\python-brightsense-develop`:
    - map `lib`
    - map `framework`
    - map `model`
@@ -78,8 +78,8 @@ notepad laptop_server.py
 
 ```
 Wifi OK, IP: ... MAC: ...
-subscribing to runar-wellen/broadcast/cmd
-subscribing to runar-wellen/<id>/cmd
+subscribing to mijn-test/broadcast/cmd
+subscribing to mijn-test/<id>/cmd
 Broadcasting {"client_id": ..., "method": "discovery.register", ...}
 Listening for messages!
 ```
@@ -101,7 +101,7 @@ MQTT verbonden met broker.hivemq.com - resultaat: Success
 SCAN: {...}
 DEVICE GEVONDEN: <id> | type TEST_ESP32_LUX | ip ... | via discovery.scan
 >>> Testreeks start voor <id>
-COMMANDO naar runar-wellen/<id>/cmd : {...}
+COMMANDO naar mijn-test/<id>/cmd : {...}
 ANTWOORD op device.list ... status 200 OK
 ANTWOORD op device.get ... status 200 OK
 ANTWOORD op device.set ... status 200 OK
@@ -194,10 +194,10 @@ PROFIEL = "thuis"      # "thuis" of "brightlinq"
 
 PROFIELEN = {
     "thuis": {
-        "ssid": "jippie",
+        "ssid": "JOUW_WIFI",
         "password": "JOUW_WACHTWOORD",
         "server": "broker.hivemq.com",
-        "prefix": "runar-wellen/",   # voorkomt botsing op de publieke broker
+        "prefix": "mijn-test/",   # voorkomt botsing op de publieke broker
     },
     "brightlinq": {
         "ssid": "BrightLinQ",
@@ -521,7 +521,7 @@ import paho.mqtt.client as mqtt
 # ============================================================
 BROKER = "broker.hivemq.com"
 PORT = 1883
-PREFIX = "runar-wellen/"
+PREFIX = "mijn-test/"
 # ============================================================
 
 CLIENT_ID = "laptop-server-" + str(int(time.time()))

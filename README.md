@@ -70,7 +70,7 @@ De tutorial legt uit hoe server en client praten. De communicatietest toont dat 
 | Berekeningen | [BOM](documentatie/BOM_Hue_RGB_lamptester9.xlsx), tabblad BOM: onderdelen € 58,31 + verzending € 21,41 = **€ 79,72** incl. btw | Klaar |
 | Componentonderzoek | Zelfde Excel, tabbladen Compatibiliteit en Alternatieven | Op papier gecontroleerd |
 | Framework en API | [Tutorial_Brightsense_Brightlinq.md](documentatie/Tutorial_Brightsense_Brightlinq.md) | Klaar |
-| Kleur | [Kleurenspectrum](images/Kleurenspectrum-kelvin.png) en [template applicatienote](documentatie/AN_2627_PRE_KleurenspectrumLicht.docx) | Voorbereid |
+| Kleur | [Kleurenspectrum](images/Kleurenspectrum-kelvin.png) en [applicatienote](documentatie/AN_2627_PRE_KleurenspectrumLicht.docx) | Voorbereid |
 
 ## 5. Bijdrage per groepslid
 

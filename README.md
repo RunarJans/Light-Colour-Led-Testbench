@@ -77,7 +77,7 @@ De tutorial legt uit hoe server en client praten. De communicatietest toont dat 
 | Naam | Bijdrage | Legt uit tijdens de toelichting |
 |---|---|---|
 | Runar | Kostenanalyse (BOM), communicatietest met code, README | Keuze van onderdelen en kosten, communicatietest |
-| Milan | Uitleg BrightLinq en Brightsense, template applicatienote, kleurenspectrum | Framework en API, kleurmeting |
+| Milan | Uitleg BrightLinq en Brightsense, vooruitgang applicatienote, kleurenspectrum | Framework en API, kleurmeting |
 
 De volledige geschiedenis per persoon staat in de commits.
 

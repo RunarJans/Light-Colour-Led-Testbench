@@ -114,6 +114,24 @@ Het volledige overzicht met aantallen, prijzen, leveranciers en alternatieven st
 
 ---
 
+## Communicatie met Brightsense (BrightLinQ, MQTT)
+
+De ESP32 gedraagt zich als een Brightsense-device en spreekt het MQTT-protocol van het framework. Dit is eerst getest met een nepsensor (zie de communicatietest `test_device.py` op de ESP32 en `laptop_server.py` op de laptop).
+
+- **Aanmelden:** de ESP32 abonneert zich op `<prefix>broadcast/cmd` en `<prefix><id>/cmd`. Op `discovery.scan` antwoordt hij op `<prefix>broadcast/rsp` met `discovery.register` (id, ip, mac en device-type).
+- **Commando's van de server:**
+  - `device.list`: lijst met de sensoren/kanalen van het device
+  - `device.get` (kanaal): huidige meetwaarde, status 200
+  - `device.set` (kanaal): `interval` en `polling` aanpassen
+  - `device.whois`: status-LED laten knipperen
+  - een onbekend kanaal geeft status 404 (`Channel "5" not found`)
+- **Push:** als `polling` aan staat, stuurt de ESP32 elke `interval` seconden een `device.push` met de meetwaarde op `<prefix><id>/rsp`.
+- **Profielen:** `thuis` (publieke broker `broker.hivemq.com`, met eigen prefix) voor het testen, en `brightlinq` (wifi `BrightLinQ`, broker op IP-adres) voor het echte systeem.
+- **In de testbank:** de nepsensor wordt vervangen door de echte meetwaarden (lux van de BH1750, kleur van de AS7341) en de resultaten van de lamp- en bewegingstest. Het device-type kan `Configuration.BOARD_SENSE_LUX_RGB_1` zijn, maar of de echte server dat type en de kanalen accepteert, blijkt pas bij Brightsense.
+- **Let op:** de publieke broker is voor iedereen leesbaar. Stuur er geen gevoelige gegevens over en gebruik een uniek prefix.
+
+---
+
 ## Software (op ESP32)
 
 - `main.py`: hoofdloop, knop, modus-keuze
@@ -125,6 +143,7 @@ Het volledige overzicht met aantallen, prijzen, leveranciers en alternatieven st
 - `sensors/bh1750.py`: driver voor de luxsensor
 - `display.py`: aansturing van het ST7789-display
 - `servo.py`: aansturing van de servo
+- `test_device.py` en `laptop_server.py`: communicatietest met Brightsense (nepsensor en laptop-server)
 
 > Pas deze lijst aan de echte structuur van de repository aan.
 
@@ -149,6 +168,5 @@ Het volledige overzicht met aantallen, prijzen, leveranciers en alternatieven st
 
 - Alle communicatie met lamp en bewegingssensor verloopt via de Hue Bridge API (HTTP over Wi-Fi). De ESP32 en de Bridge moeten op hetzelfde netwerk zitten; de ESP32 gebruikt 2,4 GHz Wi-Fi.
 - De testbank evalueert het systeemgedrag: "Bij beweging detecteert de sensor dit wel/niet betrouwbaar?"
-- De meetgegevens kunnen ook naar het Brightsense-platform verstuurd worden (MQTT vanaf de ESP32), als dat in de opdracht zit.
 - Het project is modulair: extra sensoren, tests of een webinterface kunnen later eenvoudig worden toegevoegd.
 - Zonder Hue Motion Sensor vervalt de bewegingstest (en dus de servo en het warmtematje). De lamp-test blijft werken.

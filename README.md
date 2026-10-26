@@ -56,7 +56,7 @@ flowchart LR
 |---|---|---|
 | [Tutorial_Brightsense_Brightlinq.md](documentatie/Tutorial_Brightsense_Brightlinq.md) | Milan | Hoe het framework in elkaar zit: de BrightLinq-server met zijn REST API en de Brightsense-client op de ESP32, en welke bestanden wij moeten aanpassen. |
 | [Communicatietest.md](documentatie/Communicatietest.md) | Runar | Onze eigen test met een nepsensor op de ESP32 en een laptop-server: stappenplan, volledige code en foutoplossing. |
-| [BOM_Hue_RGB_lamptester9.xlsx](documentatie/BOM_Hue_RGB_lamptester9.xlsx) | Runar | Kostenanalyse: onderdelen, bestelreferenties, prijzen, verzending, alternatieven en compatibiliteit. |
+| [BOM_Hue_RGB_lamptester9.xlsx](documentatie/BOM_Hue_RGB_lamptester9.xlsx) | Runar,Milan | Kostenanalyse: onderdelen, bestelreferenties, prijzen, verzending, alternatieven en compatibiliteit. |
 
 De tutorial legt uit hoe server en client praten. De communicatietest toont dat onze ESP32 dat protocol ook echt spreekt.
 

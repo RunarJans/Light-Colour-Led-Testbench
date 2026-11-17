@@ -1,104 +1,107 @@
 # Light-Colour-Led-Testbench
 
-Geautomatiseerde ESP32‑testbank om lichtsterkte, RGB‑kleur en de werking van een Philips Hue‑bewegingssensor te testen.  
-Resultaten worden live weergegeven op een ingebouwd schermpje met grafieken en simpele scores.
+Project Embedded (PXL en Brightest), eerste evaluatie.
 
-## Doel
+## Inhoud
 
-- **Lamp‑test:**  
-  Een Hue‑lamp (of andere lichtbron) wordt door verschillende kleuren en wit‑/warmlicht gestuurd.  
-  Een kleursensor meet helderheid per kleur en kleuraccuraatheid. Resultaten worden in grafieken getoond.
-
-- **Bewegingstest:**  
-  Een mechanisch element beweegt 10× voor een Philips Hue‑bewegingssensor.  
-  De ESP32 controleert via de Hue Bridge of de sensor elke beweging detecteert en toont een score **X/10**.
-
-Alles wordt aangestuurd door een ESP32 met MicroPython.
+1. [Over het project](#1-over-het-project)
+2. [Schema](#2-schema)
+3. [Documentatie](#3-documentatie)
+4. [Bewijs van uitgevoerd werk](#4-bewijs-van-uitgevoerd-werk)
+5. [Bijdrage per groepslid](#5-bijdrage-per-groepslid)
+6. [Stand van zaken en volgende stappen](#6-stand-van-zaken-en-volgende-stappen)
+7. [Mapstructuur](#7-mapstructuur)
 
 ---
 
-## Gebruik
+## 1. Over het project
 
-### Lamp‑test
+Een ESP32-testbank (MicroPython) die een Philips Hue-lamp test op kleur (AS7341) en lichtsterkte (BH1750), en een Hue-bewegingssensor test met een servo en een warm plaatje. De resultaten komen op een display en gaan via MQTT naar het Brightsense-systeem (BrightLinq).
 
-1. Draai de lamp in de houder van de testbank.
-2. Sluit de behuizing (donkere meetkamer).
-3. Druk op **“Start lamp‑test”**.
+| Onderdeel | Wat gebeurt er |
+|---|---|
+| Lamp-test | De lamp loopt door kleuren en wit-tinten in een donkere doos. De sensoren meten kleur en lux. |
+| Bewegingstest | Een servo beweegt 10 keer een warm plaatje voor de Hue-sensor. De Hue Bridge meldt of de sensor reageerde. Score: X/10. |
+| Rol binnen emBright | De ESP32 draait de Brightsense-client en meldt zich via MQTT aan bij de BrightLinq-server. |
 
-De testbank:
+## 2. Schema
 
-- Stuurt de lamp automatisch door een vaste reeks:
-  - Rood, groen, blauw, cyaan, magenta, geel
-  - Warm wit, neutraal wit, koud wit
-  - Uit
-- Meet bij elke stap met een TCS34725‑kleursensor:
-  - R, G, B, clear (helderheid)
-- Toont op het scherm:
-  - Grafieken van helderheid per kleur (R/G/B over de teststappen)
-  - Kleuraccuraatheid (vergelijking verwachte vs. gemeten R/G/B‑verhouding)
-  - Optioneel een samenvattende score (bijv. “Kleuraccuraatheid: 87 %”)
+```mermaid
+flowchart LR
+    SRV["BrightLinq-server<br/>REST API en MQTT"]
+    BR["Hue Bridge"]
+    LAMP["Hue-lamp"]
+    PIR["Hue-bewegingssensor"]
+    ESP["ESP32<br/>MicroPython"]
+    AS["AS7341<br/>kleur"]
+    BH["BH1750<br/>lux"]
+    DSP["Display ST7789"]
+    SRVO["Servo SG90"]
+    BTN["Knop en status-LED"]
 
----
+    SRV <-->|MQTT| ESP
+    ESP <-->|HTTP| BR
+    BR <-->|Zigbee| LAMP
+    BR <-->|Zigbee| PIR
+    ESP <-->|I2C| AS
+    ESP <-->|I2C| BH
+    ESP -->|SPI| DSP
+    ESP -->|PWM| SRVO
+    BTN -->|GPIO| ESP
+```
 
-### Bewegingstest
+## 3. Documentatie
 
-1. Monteer de Philips Hue‑bewegingssensor op de voorziene plek.
-2. Zorg dat het bewegingselement (bijv. servo met vlagje) vrij kan bewegen.
-3. Druk op **“Start bewegingstest”**.
+| Bestand | Door | Inhoud |
+|---|---|---|
+| [Tutorial_Brightsense_Brightlinq.md](documentatie/Tutorial_Brightsense_Brightlinq.md) | Milan | Hoe het framework in elkaar zit: de BrightLinq-server met zijn REST API en de Brightsense-client op de ESP32, en welke bestanden wij moeten aanpassen. |
+| [Communicatietest.md](documentatie/Communicatietest.md) | Runar | Onze eigen test met een nepsensor op de ESP32 en een laptop-server: stappenplan, volledige code en foutoplossing. |
+| [BOM_Hue_RGB_lamptester9.xlsx](documentatie/BOM_Hue_RGB_lamptester9.xlsx) | Runar,Milan | Kostenanalyse: onderdelen, bestelreferenties, prijzen, verzending, alternatieven en compatibiliteit. |
 
-De testbank:
+De tutorial legt uit hoe server en client praten. De communicatietest toont dat onze ESP32 dat protocol ook echt spreekt.
 
-- Beweegt 10× een object voor de sensor (vast patroon).
-- Vraagt na elke beweging via de Hue Bridge API:
-  - `state.presence` (gedetecteerd ja/nee)
-  - Optioneel `state.lightlevel`
-- Telt hoeveel keer de sensor correct reageerde.
-- Toont op het scherm:
-  - Tijdens de test: “Getest: 3/10”, “Gedetecteerd: 2/10”
-  - Na afloop: **“Score: 8/10”** (en eventueel een korte kwalificatie)
+## 4. Bewijs van uitgevoerd werk
 
----
+| Soort | Waar | Stand |
+|---|---|---|
+| Schema | Hierboven, deel 2 | Klaar |
+| Code | `test_device.py` (ESP32) en `laptop_server.py` (laptop) in [Communicatietest.md](documentatie/Communicatietest.md), delen 7 en 8 | Geschreven |
+| Deeltest | [Communicatietest.md](documentatie/Communicatietest.md), deel 3 met de verwachte uitkomst | Resultaat: [invullen] |
+| Berekeningen | [BOM](documentatie/BOM_Hue_RGB_lamptester9.xlsx), tabblad BOM: onderdelen € 58,31 + verzending € 21,41 = **€ 79,72** incl. btw | Klaar |
+| Componentonderzoek | Zelfde Excel, tabbladen Compatibiliteit en Alternatieven | Op papier gecontroleerd |
+| Framework en API | [Tutorial_Brightsense_Brightlinq.md](documentatie/Tutorial_Brightsense_Brightlinq.md) | Klaar |
+| Kleur | [Kleurenspectrum](images/Kleurenspectrum-kelvin.png) en [applicatienote](documentatie/AN_2627_PRE_KleurenspectrumLicht.docx) | Voorbereid |
 
-## Hardware (kern)
+## 5. Bijdrage per groepslid
 
-- ESP32 (MicroPython)
-- TCS34725 kleursensor (I²C)
-- Klein display (TFT of OLED)
-- 2–3 drukknoppen:
-  - “Start lamp‑test”
-  - “Start bewegingstest”
-  - Optioneel: “Mode / Dashboard”
-- Philips Hue Bridge + Hue lamp + Hue bewegingssensor
-- Optioneel: servo/motor voor bewegingstest
+| Naam | Bijdrage | Legt uit tijdens de toelichting |
+|---|---|---|
+| Runar | Kostenanalyse (BOM), communicatietest met code, README | Keuze van onderdelen en kosten, communicatietest |
+| Milan | Uitleg BrightLinq en Brightsense, vooruitgang applicatienote, kleurenspectrum | Framework en API, kleurmeting |
 
----
+De volledige geschiedenis per persoon staat in de commits.
 
-## Software (op ESP32)
+## 6. Stand van zaken en volgende stappen
 
-- `main.py` – hoofdloop, knoppen, modus‑keuze
-- `light_test.py` – lamp‑testreeks, sensor uitlezen, grafieken
-- `motion_test.py` – 10× beweging, Hue API uitlezen, X/10 score
-- `dashboard.py` – overzichtsscherm met laatste resultaten
-- `hue_api.py` – HTTP‑communicatie met Hue Bridge
-- `sensors/tcs34725.py` – driver voor de kleursensor
+Een afgewerkt prototype is er nog niet: we wachten op de bestelling.
 
----
+| Stap | Status |
+|---|---|
+| Concept, onderdelenlijst en kostenanalyse | Klaar |
+| Communicatietest met nepsensor | Geschreven, uitvoering volgt |
+| Onderdelen bestellen | Volgende stap |
+| Opstelling op breadboard bouwen en sensoren testen | Daarna |
+| Code voor lamp-test en bewegingstest | Daarna |
 
-## Resultaten
+## 7. Mapstructuur
 
-- **Lamp‑test:**
-  - Grafieken van helderheid per kleur (R/G/B)
-  - Kleuraccuraatheid (verwachting vs. meting)
-  - Optioneel samenvattende scores
-
-- **Bewegingstest:**
-  - Eenvoudige, duidelijke score **X/10**
-  - Optioneel kwalificatie (zeer goed / goed / matig / slecht)
-
----
-
-## Opmerkingen
-
-- Alle communicatie met lamp en bewegingssensor verloopt via de Hue Bridge API (HTTP over Wi‑Fi).
-- De testbank evalueert het systeemgedrag: “Bij beweging detecteert de sensor dit wel/niet betrouwbaar?”
-- Het project is modulair: extra sensoren, tests of een webinterface kunnen later eenvoudig worden toegevoegd.
+```
+README.md
+documentatie/
+    Tutorial_Brightsense_Brightlinq.md
+    Communicatietest.md
+    BOM_Hue_RGB_lamptester9.xlsx
+    AN_2627_PRE_KleurenspectrumLicht.docx
+images/
+    Kleurenspectrum-kelvin.png
+```

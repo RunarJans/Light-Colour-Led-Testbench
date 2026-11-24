@@ -3,9 +3,7 @@ import time
 
 # ==========================================
 # ESP32 + HW-395 + VEML7700
-# Gain: 1/8
-# Integration time: 100 ms
-# Supply: 3.3 V
+# Automatic gain control
 # ==========================================
 
 I2C_SDA = 21
@@ -18,27 +16,41 @@ ALS_CONFIG = 0x00
 ALS_DATA = 0x04
 WHITE_DATA = 0x05
 
-# Gain 1/8, integration time 100 ms,
-# shutdown disabled.
-CONFIG_VALUE = 0x1000
+INTEGRATION_TIME = 100
 
-# Official resolution for gain 1/8, IT 100 ms
-LUX_RESOLUTION = 0.4608
+# Vishay Application Note 84323
+# Resolutie in lux/count bij 100 ms
+RESOLUTION_TABLE = {
+    0.125: 0.5376,  # Gain 1/8
+    0.25:  0.2688,  # Gain 1/4
+    1.0:   0.0672,  # Gain 1
+    2.0:   0.0336   # Gain 2
+}
 
-# I2C
+# Kalibratie op basis van UT383 bij 1021 lux:
+# VEML = 1111 lux
+# UT383 = 1021 lux
+CALIBRATION_FACTOR = 1021 / 1111
+
+GAINS = [
+    (2, 0.125, "1/8"),
+    (3, 0.25,  "1/4"),
+    (0, 1.0,   "1"),
+    (1, 2.0,   "2")
+]
+
+# Gain switching thresholds
+RAW_LOW = 1500
+RAW_HIGH = 4000
+
+gain_index = 0
+
 i2c = I2C(
     0,
     scl=Pin(I2C_SCL),
     sda=Pin(I2C_SDA),
     freq=I2C_FREQ
 )
-
-
-def write_register(register, value):
-    data = bytearray(2)
-    data[0] = value & 0xFF
-    data[1] = (value >> 8) & 0xFF
-    i2c.writeto_mem(VEML7700_ADDR, register, data)
 
 
 def read_register(register):
@@ -50,53 +62,103 @@ def read_register(register):
     return data[0] | (data[1] << 8)
 
 
+def write_register(register, value):
+    i2c.writeto_mem(
+        VEML7700_ADDR,
+        register,
+        value.to_bytes(2, "little")
+    )
+
+
+# ==========================================
+# DYNAMIC REFERENCE RESOLUTION
+# ==========================================
+def get_resolution(index):
+    gain = GAINS[index][1]
+    # Basisresolutie uit Vishay-tabel bij 100 ms
+    reference = RESOLUTION_TABLE[gain]
+    # Aanpassen aan integratietijd
+    resolution = reference * (100 / INTEGRATION_TIME)
+    return resolution
+
+
+# ==========================================
+# SENSOR CONFIGURATION
+# ==========================================
+
+def set_gain(index):
+
+    global gain_index
+
+    gain_index = index
+
+    gain_code, gain, gain_name = GAINS[index]
+
+    # IT = 100 ms, sensor enabled
+    config = gain_code << 11
+
+    write_register(ALS_CONFIG, config)
+
+    # Wait for a fresh measurement
+    time.sleep_ms(INTEGRATION_TIME + 150)
+
+    return gain
+
+
 def init_sensor():
-    write_register(ALS_CONFIG, CONFIG_VALUE)
 
-    # Allow sensor to start and complete integration
-    time.sleep_ms(250)
+    set_gain(gain_index)
 
-    config = read_register(ALS_CONFIG)
-
-    print("Configuration readback:", hex(config))
-
-    if config != CONFIG_VALUE:
-        raise Exception("VEML7700 configuration incorrect")
+    print("Configuration:", hex(read_register(ALS_CONFIG)))
 
 
-def calculate_lux(raw):
-    # Convert raw counts to linear lux
-    lux = raw * LUX_RESOLUTION
+# ==========================================
+# VISHAY LUX CORRECTION
+# ==========================================
 
-    # Vishay non-linearity correction.
-    # Applied when ALS raw count is above 100.
-    if raw > 100:
-        lux = (
-            6.0135e-13 * lux**4
-            - 9.3924e-9 * lux**3
-            + 8.1488e-5 * lux**2
-            + 1.0023 * lux
-        )
+def calculate_lux(raw, index):
+    resolution = get_resolution(index)
+    # Lineaire luxberekening
+    lux_raw = raw * resolution
+    # Kalibratie tegenover UT383
+    lux = lux_raw * CALIBRATION_FACTOR
+    return lux, resolution
 
-    return lux
 
+# ==========================================
+# AUTOMATIC GAIN CONTROL
+# ==========================================
 
 def read_light():
+    global gain_index
     raw = read_register(ALS_DATA)
+    old_gain = gain_index
+
+    if raw < RAW_LOW and gain_index < len(GAINS) - 1:
+        gain_index += 1
+    elif raw > RAW_HIGH and gain_index > 0:
+        gain_index -= 1
+    if gain_index != old_gain:
+        print(
+            "Changing gain:",
+            GAINS[old_gain][2],
+            "->",
+            GAINS[gain_index][2]
+        )
+        set_gain(gain_index)
+        # Read a fresh sample with the new gain
+        raw = read_register(ALS_DATA)
+
     white = read_register(WHITE_DATA)
-
-    lux_linear = raw * LUX_RESOLUTION
-    lux_corrected = calculate_lux(raw)
-
-    return raw, white, lux_linear, lux_corrected
+    lux, resolution = calculate_lux(raw, gain_index)
+    return raw, white, lux, resolution
 
 
 # ==========================================
 # MAIN
 # ==========================================
-
 print()
-print("ESP32 VEML7700 Lux Meter")
+print("ESP32 VEML7700 AUTO GAIN")
 print("========================")
 
 devices = i2c.scan()
@@ -107,31 +169,27 @@ if VEML7700_ADDR not in devices:
 
 else:
     init_sensor()
-
     print("Sensor initialized")
-    print("Gain: 1/8")
-    print("Integration: 100 ms")
-    print("Resolution:", LUX_RESOLUTION, "lux/count")
+    print("Integration:", INTEGRATION_TIME, "ms")
     print("========================")
 
     while True:
         try:
-            raw, white, linear, corrected = read_light()
+            raw, white, lux_linear, resolution = read_light()
 
-            print("ALS raw       :", raw)
-            print("WHITE raw     :", white)
-            print("Linear lux    : {:.2f}".format(linear))
-            print("Corrected lux : {:.2f}".format(corrected))
+            print("ALS raw        :", raw)
+            print("WHITE raw      :", white)
+            print("Gain           :", GAINS[gain_index][2])
+            print("Resolution     :", resolution)
+            print("Lux linear     : {:.2f}".format(lux_linear))
 
             if raw > 60000:
                 print("WARNING: Sensor near saturation!")
 
-            elif raw < 100:
-                print("WARNING: Low raw count; consider higher gain.")
-
             print("------------------------")
 
         except Exception as e:
+
             print("Measurement error:", e)
 
-        time.sleep_ms(1000)
+        time.sleep_ms(200)
